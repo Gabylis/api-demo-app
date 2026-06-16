@@ -1,58 +1,178 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# api-foundation-demo
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Demo project showcasing [gabylis/api-foundation](https://github.com/Gabylis/api-foundation) — a Laravel package for building documented REST APIs with structured JSON responses and PHP 8 OpenAPI attributes.
 
-## About Laravel
+Implements a simple **Products + Categories** catalog API with full CRUD, pagination, filters, and auto-generated Swagger UI documentation.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Live demo
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Swagger UI: `http://localhost:8000/api/documentation`
 
-## Learning Laravel
+![Swagger UI](screenshots/swagger.png)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+---
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Stack
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+- **Laravel 11**
+- **SQLite** — zero-config database
+- **gabylis/api-foundation** — base controller, structured responses, OpenAPI scaffold
+- **darkaonline/l5-swagger** — Swagger UI generation from PHP 8 attributes
 
-## Agentic Development
+---
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Endpoints
+
+### Categories
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/categories` | List all (paginated, with product count) |
+| GET | `/api/categories/{id}` | Get single category |
+| POST | `/api/categories` | Create |
+| PUT | `/api/categories/{id}` | Update |
+| DELETE | `/api/categories/{id}` | Soft delete |
+
+### Products
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/products` | List all (paginated) |
+| GET | `/api/products/{id}` | Get single product with category |
+| POST | `/api/products` | Create |
+| PUT | `/api/products/{id}` | Update |
+| DELETE | `/api/products/{id}` | Soft delete |
+
+**Available filters for `GET /api/products`:**
+- `?category_id=1` — filter by category
+- `?active=true` — filter by active status
+- `?search=headphones` — search by name or SKU
+- `?per_page=5` — pagination
+
+---
+
+## Quick start
 
 ```bash
-composer require laravel/boost --dev
+git clone https://github.com/Gabylis/api-foundation-demo.git
+cd api-foundation-demo
 
-php artisan boost:install
+composer install
+
+cp .env.example .env
+php artisan key:generate
+
+touch database/database.sqlite
+php artisan migrate --seed
+
+php artisan l5-swagger:generate
+php artisan serve
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Open **http://localhost:8000/api/documentation**
 
-## Contributing
+---
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Example requests
 
-## Code of Conduct
+```bash
+# List categories
+curl http://localhost:8000/api/categories
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# List products filtered by category
+curl "http://localhost:8000/api/products?category_id=1&per_page=5"
 
-## Security Vulnerabilities
+# Search products
+curl "http://localhost:8000/api/products?search=electronics"
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# Create a category
+curl -X POST http://localhost:8000/api/categories \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Sports", "description": "Sporting goods"}'
+
+# Create a product
+curl -X POST http://localhost:8000/api/products \
+  -H "Content-Type: application/json" \
+  -d '{
+    "category_id": 1,
+    "name": "Wireless Headphones",
+    "sku": "WH-XM5",
+    "price": 349.99,
+    "stock": 50
+  }'
+```
+
+---
+
+## Response envelope
+
+Every response follows the same structure provided by `gabylis/api-foundation`:
+
+```json
+{
+    "success": true,
+    "status": "success",
+    "message": "Products retrieved successfully",
+    "data": [...],
+    "meta": {
+        "per_page": 15,
+        "current_page": 1,
+        "total": 20,
+        "last_page": 2,
+        "next_page_url": "...",
+        "previous_page_url": null
+    }
+}
+```
+
+Validation errors always return JSON (never redirects):
+
+```json
+{
+    "success": false,
+    "status": "failed",
+    "message": "The name field is required.",
+    "data": {
+        "name": ["The name field is required."]
+    }
+}
+```
+
+---
+
+## How gabylis/api-foundation is used here
+
+```php
+// 1. Controllers extend ApiBaseController
+class ProductApiController extends ApiBaseController { ... }
+
+// 2. Paginated response with meta
+return $this->sendPaginatedResponse($products, 'Products retrieved', ProductResource::class);
+
+// 3. Single resource response
+return $this->sendResponse(new ProductResource($product), 'Product retrieved');
+
+// 4. Error response
+return $this->sendError('Product not found', [], 404);
+
+// 5. Success message only
+return $this->sendSuccess('Product deleted successfully');
+
+// 6. FormRequest extends ApiFormRequest — always returns JSON
+class StoreProductRequest extends ApiFormRequest { ... }
+```
+
+---
+
+## Related
+
+- **Package**: [gabylis/api-foundation](https://github.com/Gabylis/api-foundation)
+- **Packagist**: [packagist.org/packages/gabylis/api-foundation](https://packagist.org/packages/gabylis/api-foundation)
+
+---
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+MIT
