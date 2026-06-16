@@ -10,3 +10,4 @@ database/database.sqlite
 /storage/framework/sessions
 /storage/framework/views
 /bootstrap/cache
+.idea/
